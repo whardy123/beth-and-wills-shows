@@ -6,5 +6,9 @@
   "scope": "./",
   "display": "standalone",
   "background_color": "#f6f7f9",
-  "theme_color": "#111827"
+  "theme_color": "#111827",
+  "icons": [
+    {"src":"icon-192-q.png","sizes":"192x192","type":"image/png","purpose":"any"},
+    {"src":"icon-512-q.png","sizes":"512x512","type":"image/png","purpose":"any"}
+  ]
 }
