@@ -4,37 +4,29 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#111827"><title>Beth and Will's Shows</title>
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f6f7f9;color:#172033}header{background:#111827;color:#fff;padding:20px 18px 16px;position:sticky;top:0;z-index:3}header h1{font-size:22px;margin:0 0 4px}header p{margin:0;color:#cbd5e1;font-size:13px}.wrap{max-width:760px;margin:auto;padding:16px 14px 88px}.nav{display:flex;gap:7px;overflow:auto;padding:10px 0 16px}.nav button,.add{border:0;border-radius:999px;padding:9px 13px;background:#e5e7eb;white-space:nowrap;font-weight:650}.nav .on{background:#111827;color:#fff}.section{margin:4px 0 22px}.section h2{font-size:18px;margin:0 0 10px}.card{background:white;border-radius:15px;padding:14px;margin:9px 0;box-shadow:0 1px 4px #00000012;border-left:5px solid #94a3b8}.card.green{border-color:#22c55e}.card.blue{border-color:#3b82f6}.card.amber{border-color:#f59e0b}.card.purple{border-color:#8b5cf6}.top{display:flex;justify-content:space-between;gap:10px}.title{font-weight:750;font-size:17px}.provider{font-size:12px;color:#64748b}.badge{font-size:11px;font-weight:700;border-radius:999px;padding:5px 8px;height:max-content;background:#f1f5f9}.detail{font-size:13px;color:#475569;margin:8px 0}.watch{width:100%;border:0;border-radius:10px;padding:10px;background:#dcfce7;color:#166534;font-weight:750}.empty{color:#64748b;font-size:14px}.bottom{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e5e7eb;display:flex;justify-content:space-around;padding:9px 4px calc(9px + env(safe-area-inset-bottom));z-index:4}.bottom button{border:0;background:none;font-size:11px;color:#475569}.plus{position:fixed;right:18px;bottom:70px;width:52px;height:52px;border-radius:50%;border:0;background:#111827;color:#fff;font-size:27px;box-shadow:0 3px 12px #0003}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f6f7f9;color:#172033}header{background:#111827;color:#fff;padding:20px 18px 16px;position:sticky;top:0;z-index:3}header h1{font-size:22px;margin:0 0 4px}header p{margin:0;color:#cbd5e1;font-size:13px}.wrap{max-width:760px;margin:auto;padding:16px 14px 88px}.nav{display:flex;gap:7px;overflow:auto;padding:10px 0 16px}.nav button,.add{border:0;border-radius:999px;padding:9px 13px;background:#e5e7eb;white-space:nowrap;font-weight:650}.nav .on{background:#111827;color:#fff}.section{margin:4px 0 22px}.section h2{font-size:18px;margin:0 0 10px}.card{background:white;border-radius:15px;padding:14px;margin:9px 0;box-shadow:0 1px 4px #00000012;border-left:5px solid #94a3b8}.card.green{border-color:#22c55e}.card.blue{border-color:#3b82f6}.card.amber{border-color:#f59e0b}.card.purple{border-color:#8b5cf6}.top{display:flex;justify-content:space-between;gap:10px}.title{font-weight:750;font-size:17px}.provider{font-size:12px;color:#64748b}.badge{font-size:11px;font-weight:700;border-radius:999px;padding:5px 8px;height:max-content;background:#f1f5f9}.detail{font-size:13px;color:#475569;margin:8px 0}.watch{width:100%;border:0;border-radius:10px;padding:10px;background:#dcfce7;color:#166534;font-weight:750}.empty{color:#64748b;font-size:14px}.secondary{border:0;border-radius:10px;padding:9px;background:#f1f5f9;font-weight:700;margin-top:7px}.bottom{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e5e7eb;display:flex;justify-content:space-around;padding:9px 4px calc(9px + env(safe-area-inset-bottom));z-index:4}.bottom button{border:0;background:none;font-size:11px;color:#475569}.plus{position:fixed;right:18px;bottom:70px;width:52px;height:52px;border-radius:50%;border:0;background:#111827;color:#fff;font-size:27px;box-shadow:0 3px 12px #0003}
 </style></head><body>
 <header><h1>Beth and Will's Shows</h1><p>Your shows, progress and what's next</p></header>
 <main class="wrap"><div class="nav"><button class="on">Home</button><button>My Shows</button><button>Updates</button><button>Discover</button><button>Archive</button></div><div id="app"></div></main>
-<button class="plus" onclick="alert('Add Show search is coming next')">+</button>
+<button class="plus" onclick="addShow()">+</button>
 <nav class="bottom"><button>⌂<br>Home</button><button>▣<br>My Shows</button><button>●<br>Updates</button><button>⌕<br>Discover</button><button>□<br>Archive</button></nav>
 <script>
-const shows=[
+const seed=[
 ["Ted Lasso","Apple","Watching Now","Caught up — waiting for next episode","green"],
-["House of the Dragon","HBO Max","Watching Now","Season 3 • Episode 1 watched","green"],
-["Blood of My Blood","Starz","Watching Now","Season 2 • Episode 1 watched","green"],
-["Furious","Hulu","Ready to Start","New show to us","blue"],
-["A Knight of the Seven Kingdoms","HBO Max","Ready to Start","New show to us","blue"],
-["MobLand","Paramount+","Ready to Start","New show to us","blue"],
-["Yellowstone","Paramount+","Ready to Start","New show to us","blue"],
-["1883","Paramount+","Ready to Start","New show to us","blue"],
-["1923","Paramount+","Ready to Start","New show to us","blue"],
-["Dutton Ranch","Paramount+","Ready to Start","New show to us","blue"],
-["Marshals","Paramount+","Ready to Start","New show to us","blue"],
-["Lioness","Paramount+","Waiting","Watched through Season 3","amber"],
-["Yellowjackets","","Waiting","Watched through Season 3","amber"],
-["The Testaments","Hulu","Waiting","Watched Season 1","amber"],
-["Paradise","Hulu","Waiting","Watched through Season 2","amber"],
-["The Pitt","HBO Max","Waiting","Watched through Season 2","amber"],
-["Love is Blind","Netflix","Waiting","Caught up","amber"],
-["Married at First Sight","Peacock","Waiting","Caught up","amber"],
-["Silo","Apple","Waiting","Watched through Season 3","amber"],
-["Love is Blind UK","Netflix","Upcoming","Latest season to watch","purple"],
-["Power: Legacy","Starz","Upcoming","Waiting for release","purple"],
-["Power: Origins","Starz","Upcoming","Waiting for release","purple"]
-];
-const groups=["Watching Now","Ready to Start","Waiting","Upcoming"];
-document.getElementById("app").innerHTML=groups.map(g=>'<section class="section"><h2>'+g+'</h2>'+shows.filter(s=>s[2]===g).map(s=>'<article class="card '+s[4]+'"><div class="top"><div><div class="title">'+s[0]+'</div><div class="provider">'+(s[1]||'Provider to confirm')+'</div></div><span class="badge">'+g+'</span></div><div class="detail">'+s[3]+'</div>'+(g==="Watching Now"?'<button class="watch" onclick="this.textContent=\'✓ Progress saved\'">✓ Mark Next Episode Watched</button>':'')+'</article>').join('')+'</section>').join('');
+["House of the Dragon","HBO Max","Watching Now","Season 3 • Episode 1 watched","green",3,1],
+["Blood of My Blood","Starz","Watching Now","Season 2 • Episode 1 watched","green",2,1],
+["Furious","Hulu","Ready to Start","New show to us","blue"],["A Knight of the Seven Kingdoms","HBO Max","Ready to Start","New show to us","blue"],["MobLand","Paramount+","Ready to Start","New show to us","blue"],["Yellowstone","Paramount+","Ready to Start","New show to us","blue"],["1883","Paramount+","Ready to Start","New show to us","blue"],["1923","Paramount+","Ready to Start","New show to us","blue"],["Dutton Ranch","Paramount+","Ready to Start","New show to us","blue"],["Marshals","Paramount+","Ready to Start","New show to us","blue"],
+["Lioness","Paramount+","Waiting","Watched through Season 3","amber"],["Yellowjackets","","Waiting","Watched through Season 3","amber"],["The Testaments","Hulu","Waiting","Watched Season 1","amber"],["Paradise","Hulu","Waiting","Watched through Season 2","amber"],["The Pitt","HBO Max","Waiting","Watched through Season 2","amber"],["Love is Blind","Netflix","Waiting","Caught up","amber"],["Married at First Sight","Peacock","Waiting","Caught up","amber"],["Silo","Apple","Waiting","Watched through Season 3","amber"],
+["Love is Blind UK","Netflix","Upcoming","Latest season to watch","purple"],["Power: Legacy","Starz","Upcoming","Waiting for release","purple"],["Power: Origins","Starz","Upcoming","Waiting for release","purple"]];
+let shows;try{shows=JSON.parse(localStorage.getItem("bwShows"))||seed}catch(e){shows=seed}
+let page="Home";const tabs=["Home","My Shows","Updates","Discover","Archive"];
+function save(){try{localStorage.setItem("bwShows",JSON.stringify(shows))}catch(e){}}
+function go(p){page=p;render();scrollTo(0,0)}
+function advance(i){let s=shows[i];if(s[5]){s[6]=(s[6]||0)+1;s[3]="Season "+s[5]+" • Episode "+s[6]+" watched"}else{s[3]="Progress saved — caught up"}save();render()}
+function archiveShow(i){shows[i][7]=shows[i][2];shows[i][2]="Archive";shows[i][4]="gray";save();render()}
+function restoreShow(i){shows[i][2]=shows[i][7]||"Ready to Start";shows[i][4]=shows[i][2]==="Watching Now"?"green":shows[i][2]==="Waiting"?"amber":shows[i][2]==="Upcoming"?"purple":"blue";save();render()}
+function addShow(){let t=prompt("Show title");if(!t)return;let p=prompt("Streaming service (optional)")||"";shows.push([t,p,"Ready to Start","Added manually","blue"]);save();page="My Shows";render()}
+function card(s,i){let b=s[2]==="Watching Now"?'<button class="watch" onclick="advance('+i+')">✓ Mark '+(s[5]?'S'+s[5]+' E'+((s[6]||0)+1):'Next Episode')+' Watched</button>':'';if(page==="My Shows")b+='<button class="secondary" onclick="archiveShow('+i+')">Stop Watching</button>';if(page==="Archive")b+='<button class="secondary" onclick="restoreShow('+i+')">Restore</button>';return '<article class="card '+s[4]+'"><div class="top"><div><div class="title">'+s[0]+'</div><div class="provider">'+(s[1]||'Provider to confirm')+'</div></div><span class="badge">'+s[2]+'</span></div><div class="detail">'+s[3]+'</div>'+b+'</article>'}
+function render(){document.querySelector(".nav").innerHTML=tabs.map(x=>'<button class="'+(page===x?'on':'')+'" onclick="go(\''+x+'\')">'+x+'</button>').join("");document.querySelector(".bottom").innerHTML=tabs.map((x,i)=>'<button onclick="go(\''+x+'\')">'+["⌂","▣","●","⌕","□"][i]+'<br>'+x+'</button>').join("");let h="";if(page==="Home"){["Watching Now","Ready to Start","Waiting","Upcoming"].forEach(g=>{let a=shows.map((s,i)=>[s,i]).filter(x=>x[0][2]===g);if(a.length)h+='<section class="section"><h2>'+g+'</h2>'+a.map(x=>card(x[0],x[1])).join("")+'</section>'})}else if(page==="My Shows"){h='<section class="section"><h2>My Shows</h2>'+shows.map((s,i)=>[s,i]).filter(x=>x[0][2]!=="Archive").map(x=>card(x[0],x[1])).join("")+'</section>'}else if(page==="Archive"){let a=shows.map((s,i)=>[s,i]).filter(x=>x[0][2]==="Archive");h='<section class="section"><h2>Archive</h2>'+(a.length?a.map(x=>card(x[0],x[1])).join(""):'<p class="empty">No archived shows yet.</p>')+'</section>'}else if(page==="Updates"){h='<section class="section"><h2>Updates</h2><p class="empty">Renewals, new episodes and premiere-date changes will appear here when live data is connected.</p></section>'}else{h='<section class="section"><h2>Discover</h2><p class="empty">Recommendations and related series will appear here.</p></section>'}document.getElementById("app").innerHTML=h}
+render();
 </script></body></html>
