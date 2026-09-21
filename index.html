@@ -31,7 +31,11 @@ let shows;try{shows=JSON.parse(localStorage.getItem("bwShows"))||seed}catch(e){s
 shows.forEach(s=>{if(s[0]==="The West Wing"&&s[1]==="NBC")s[1]="Checking U.S. availability"});
 const verifiedStreaming={
 "The West Wing":"Netflix • HBO Max",
-"Yellowjackets":"Paramount+"
+"Yellowjackets":"Paramount+",
+"Furious":"Hulu",
+"A Knight of the Seven Kingdoms":"HBO Max",
+"MobLand":"Paramount+",
+"1883":"Paramount+"
 };
 shows.forEach(s=>{if(verifiedStreaming[s[0]])s[1]=verifiedStreaming[s[0]]});
 save();
