@@ -27,6 +27,9 @@ const ids={
 "Marshals":{imdb:"tt36849871",tvmaze:84526,tmdb:290856}
 };
 let shows;try{shows=JSON.parse(localStorage.getItem("bwShows"))||seed}catch(e){shows=seed}
+// Migrate provider values saved before provider meant current streaming availability.
+shows.forEach(s=>{if(s[0]==="The West Wing"&&s[1]==="NBC")s[1]="Checking U.S. availability"});
+save();
 function getIds(s){return ids[s[0]]||{}}
 async function resolveTvmaze(s){let x=getIds(s);if(x.tvmaze)return x.tvmaze;if(!x.imdb)return null;try{let r=await fetch("https://api.tvmaze.com/lookup/shows?imdb="+encodeURIComponent(x.imdb));if(!r.ok)return null;let sh=await r.json();if(sh&&sh.id){x.tvmaze=sh.id;return sh.id}}catch(e){}return null}
 let page="Home";let lastChange=null;const tabs=["Home","My Shows","Updates","Discover","Archive"];
