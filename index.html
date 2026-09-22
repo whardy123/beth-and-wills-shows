@@ -89,7 +89,32 @@ async function resolveTvmaze(s){if(s.ids.tvmaze)return s.ids.tvmaze;if(!s.ids.im
 async function autoLink(){for(const s of shows){if(s.ids.tvmaze||s.ids.imdb)continue;try{let r=await fetch("https://api.tvmaze.com/search/shows?q="+encodeURIComponent(s.title));if(!r.ok)continue;let a=await r.json(),n=v=>(v||"").toLowerCase().replace(/[^a-z0-9]/g,""),x=a.filter(z=>n(z.show.name)===n(s.title));if(x.length===1){let sh=x[0].show;s.ids={tvmaze:sh.id,imdb:sh.externals&&sh.externals.imdb||null,thetvdb:sh.externals&&sh.externals.thetvdb||null};save()}}catch(e){}}render()}
 function advance(i){let s=shows[i];lastChange={i,progress:s.progress?{...s.progress}:null,note:s.note};if(!s.progress)s.progress={season:1,episode:1};else if(s.progress.complete){s.progress={season:s.progress.season+1,episode:1}}else s.progress.episode++;s.note="Season "+s.progress.season+" • Episode "+s.progress.episode+" watched";save();render()}
 function undoProgress(){if(!lastChange)return;let s=shows[lastChange.i];s.progress=lastChange.progress;s.note=lastChange.note;lastChange=null;save();render()}
-function editProgress(i){let s=shows[i],p=s.progress||{};let a=prompt("Season number",p.season||"");if(a===null)return;let b=prompt("Last episode watched",p.episode||"");if(b===null)return;a=parseInt(a);b=parseInt(b);if(!a||isNaN(b)||b<0)return alert("Please enter valid season and episode numbers.");s.progress={season:a,episode:b};s.note="Season "+a+" • Episode "+b+" watched";s.status="Watching Now";save();render()}
+async function editProgress(i){
+ let s=shows[i],p=s.progress||{},id=await resolveTvmaze(s),eps=[];
+ if(id){try{let r=await fetch("https://api.tvmaze.com/shows/"+id+"/episodes");if(r.ok)eps=await r.json()}catch(e){}}
+ if(!eps.length){
+  let a=prompt("Season number",p.season||"");if(a===null)return;let b=prompt("Last episode watched",p.episode||"");if(b===null)return;a=parseInt(a);b=parseInt(b);if(!a||isNaN(b)||b<0)return alert("Please enter valid season and episode numbers.");s.progress={season:a,episode:b};s.note="Season "+a+" • Episode "+b+" watched";s.status="Watching Now";save();render();return
+ }
+ let seasons=[...new Set(eps.filter(e=>e.season>0&&e.number!=null).map(e=>e.season))].sort((a,b)=>b-a);
+ let latest=eps.filter(e=>e.number!=null&&e.season>0&&(e.airstamp?new Date(e.airstamp)<=new Date():e.airdate?new Date(e.airdate+"T23:59:59")<=new Date():false)).sort((a,b)=>b.season-a.season||b.number-a.number)[0];
+ let seasonText=seasons.map((x,n)=>(n+1)+". Season "+x+(latest&&x===latest.season?" (latest available)":"")).join("\n");
+ let def=Math.max(0,seasons.indexOf(Number(p.season)))+1;if(!def)def=1;
+ let pick=prompt(s.title+"\n\nChoose the season:\n\n"+seasonText+"\n\nEnter 1-"+seasons.length,String(def));if(pick===null)return;
+ let si=parseInt(pick)-1;if(isNaN(si)||si<0||si>=seasons.length)return alert("Please choose a season from the list.");
+ let season=seasons[si],seasonEps=eps.filter(e=>e.season===season&&e.number!=null).sort((a,b)=>a.number-b.number),available=seasonEps.filter(e=>e.airstamp?new Date(e.airstamp)<=new Date():e.airdate?new Date(e.airdate+"T23:59:59")<=new Date():false);
+ let latestSeasonEp=available.length?available[available.length-1]:null,maxEp=seasonEps.length?seasonEps[seasonEps.length-1].number:0;
+ let current=Number(p.season)===season&&!p.complete?Number(p.episode||0):0;
+ let b=prompt("Season "+season+" has "+seasonEps.length+" listed episode"+(seasonEps.length===1?"":"s")+"."+(latestSeasonEp?"\nLatest available: Episode "+latestSeasonEp.number+(latestSeasonEp.name?" — "+latestSeasonEp.name:""):"\nNo episodes from this season are available yet.")+"\n\nEnter the LAST episode watched.\nEnter 0 if you have not started this season.\nEnter F if you finished the season.",String(current));
+ if(b===null)return;b=String(b).trim();
+ if(/^f(inished)?$/i.test(b)){
+  if(!maxEp)return alert("No numbered episodes are listed for this season yet.");
+  s.progress={season:season,complete:true};s.note="Watched through Season "+season;s.status="Waiting";
+ }else{
+  let ep=parseInt(b);if(isNaN(ep)||ep<0||ep>maxEp)return alert("Please enter an episode number from 0 to "+maxEp+", or F for finished.");
+  s.progress={season:season,episode:ep};s.note=ep===0?"Season "+season+" • Not started":"Season "+season+" • Episode "+ep+" watched";s.status="Watching Now";
+ }
+ save();render()
+}
 function archiveShow(i){shows[i].previousStatus=shows[i].status;shows[i].status="Archive";save();render()}
 function restoreShow(i){shows[i].status=shows[i].previousStatus||"Ready to Start";save();render()}
 function editStreaming(i){let s=shows[i],v=prompt("Where can you currently stream "+s.title+" in the U.S.?\n\nEnter the subscription service(s), or leave blank if unknown.",s.stream==="Checking U.S. availability"?"":s.stream);if(v===null)return;s.stream=v.trim()||"Checking U.S. availability";localStorage.setItem(KEY,JSON.stringify(shows));syncOne(s);render()}
