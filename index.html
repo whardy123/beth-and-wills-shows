@@ -170,7 +170,7 @@ async function renderDiscover(){
   for(const g of genres){
    try{
     let r=await fetch("https://api.tvmaze.com/search/shows?q="+encodeURIComponent(g));if(!r.ok)continue;let a=await r.json();
-    a.forEach(z=>{let sh=z.show;if(!sh||dismissed.has(Number(sh.id))||known.has((sh.name||"").toLowerCase()))return;
+    a.forEach(z=>{let sh=z.show;if(!sh||dismissed.has(Number(sh.id))||known.has((sh.name||"").toLowerCase()))return;if(sh.language&&sh.language!=="English")return;
      let overlap=(sh.genres||[]).filter(x=>genres.includes(x));if(!overlap.length)return;
      let title=(sh.name||"").toLowerCase(),generic=genres.some(x=>title===x.toLowerCase())||/^drama( |$)/i.test(sh.name||"");
      if(generic)return;
@@ -196,7 +196,7 @@ function render(){
  if(page==="Home"){["Watching Now","Ready to Start","Waiting","Upcoming"].forEach(g=>{let a=filteredShows().filter(x=>x[0].status===g);if(a.length)h+='<section class="section"><h2>'+g+"</h2>"+a.map(x=>card(x[0],x[1])).join("")+"</section>"})}
  else if(page==="Archive"){let a=shows.map((s,i)=>[s,i]).filter(x=>x[0].status==="Archive");h='<section class="section"><h2>Archive</h2>'+(a.length?a.map(x=>card(x[0],x[1])).join(""):'<p class="empty">No archived shows yet.</p>')+"</section>"}
  else if(page==="Updates")h='<section class="section"><h2>Updates</h2><p class="muted">What’s new with your shows — episodes, premieres and series status.</p><div id="updatesList"><p class="empty">Checking your shows…</p></div></section>';
- else h='<section class="section"><h2>Discover</h2><p class="muted">Suggestions based on the genres in shows you already keep.</p><div id="discoverList"><p class="empty">Finding shows you may like…</p></div></section>';
+ else h='<section class="section"><h2>Discover</h2><p class="muted">Suggestions based on your library. English-language shows only — no dubbed recommendations.</p><div id="discoverList"><p class="empty">Finding shows you may like…</p></div></section>';
  document.getElementById("app").innerHTML=h;
  shows.forEach((s,i)=>{if(s.progress&&(s.status==="Watching Now"||s.status==="Waiting"))liveNext(s,i)});
  if(page==="Updates")renderUpdates();if(page==="Discover")renderDiscover()
