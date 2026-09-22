@@ -139,11 +139,12 @@ async function renderUpdates(){
    let ep=s.progress?await getNextInfo(s):null,si=await getShowInfo(s),parts=[],priority=0;
    if(ep&&ep.kind!=="caught"){
     let e=ep.episode,d=ep.when?ep.when.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"}):"Date TBA";
-    parts.push((ep.kind==="available"?'<span class="newEp">NEW EPISODE AVAILABLE</span>':'<span class="scheduled">NEXT EPISODE SCHEDULED</span>')+'<div class="statusline">S'+e.season+' E'+e.number+(e.name?" — "+e.name:"")+' • '+d+'</div>');
+    let lab=ep.kind==="available"?"NEW EPISODE AVAILABLE":(e.number===1?"NEW SEASON PREMIERE SCHEDULED":"NEXT EPISODE SCHEDULED");
+    parts.push((ep.kind==="available"?'<span class="newEp">'+lab+'</span>':'<span class="scheduled">'+lab+'</span>')+'<div class="statusline">S'+e.season+' E'+e.number+(e.name?" — "+e.name:"")+' • '+d+'</div>');
     if(ep.kind==="available")priority=3;else priority=Math.max(priority,2)
    }else if(si&&si.next){
     let e=si.next,d=new Date(e.airstamp||e.airdate+"T23:59:59").toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
-    parts.push('<span class="scheduled">UPCOMING EPISODE</span><div class="statusline">S'+e.season+' E'+e.number+(e.name?" — "+e.name:"")+' • '+d+'</div>');priority=Math.max(priority,2)
+    let lab=e.number===1?"NEW SEASON PREMIERE SCHEDULED":"UPCOMING EPISODE";parts.push('<span class="scheduled">'+lab+'</span><div class="statusline">S'+e.season+' E'+e.number+(e.name?" — "+e.name:"")+' • '+d+'</div>');priority=Math.max(priority,2)
    }
    let sl=showStatusLabel(si);if(sl){parts.push('<div class="showstate">'+sl+'</div>');priority=Math.max(priority,1)}
    if(parts.length)rows.push({priority,title:s.title,html:'<div class="update"><strong>'+s.title+'</strong>'+parts.join("")+'</div>'})
@@ -158,7 +159,7 @@ function render(){
  let h="";
  if(page==="Home"){["Watching Now","Ready to Start","Waiting","Upcoming"].forEach(g=>{let a=filteredShows().filter(x=>x[0].status===g);if(a.length)h+='<section class="section"><h2>'+g+"</h2>"+a.map(x=>card(x[0],x[1])).join("")+"</section>"})}
  else if(page==="Archive"){let a=shows.map((s,i)=>[s,i]).filter(x=>x[0].status==="Archive");h='<section class="section"><h2>Archive</h2>'+(a.length?a.map(x=>card(x[0],x[1])).join(""):'<p class="empty">No archived shows yet.</p>')+"</section>"}
- else if(page==="Updates")h='<section class="section"><h2>Updates</h2><p class="muted">Live episode changes for shows with saved progress.</p><div id="updatesList"><p class="empty">Checking your shows…</p></div></section>';
+ else if(page==="Updates")h='<section class="section"><h2>Updates</h2><p class="muted">What’s new with your shows — episodes, premieres and series status.</p><div id="updatesList"><p class="empty">Checking your shows…</p></div></section>';
  else h='<section class="section"><h2>Discover</h2><p class="empty">Recommendations and related series will appear here.</p></section>';
  document.getElementById("app").innerHTML=h;
  shows.forEach((s,i)=>{if(s.progress&&(s.status==="Watching Now"||s.status==="Waiting"))liveNext(s,i)});
