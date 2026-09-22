@@ -160,23 +160,26 @@ function dismissRecommendation(id){let d=dismissedRecommendations();d.add(Number
 async function renderDiscover(){
  let box=document.getElementById("discoverList");if(!box)return;
  try{
-  let known=new Set(shows.map(s=>(s.title||"").toLowerCase())),dismissed=dismissedRecommendations(),source=[];
+  let known=new Set(shows.map(s=>(s.title||"").toLowerCase())),dismissed=dismissedRecommendations(),scores={};
   for(const s of shows){
    if(s.status==="Archive"||s.category==="Trash TV")continue;
    let id=await resolveTvmaze(s);if(!id)continue;
-   let r=await fetch("https://api.tvmaze.com/shows/"+id);if(!r.ok)continue;
-   let sh=await r.json();source.push({s,genres:sh.genres||[]})
+   try{let r=await fetch("https://api.tvmaze.com/shows/"+id);if(!r.ok)continue;let sh=await r.json();(sh.genres||[]).forEach(g=>scores[g]=(scores[g]||0)+(s.category==="Regular TV"?3:1))}catch(e){}
   }
-  let scores={};source.forEach(x=>x.genres.forEach(g=>scores[g]=(scores[g]||0)+(x.s.category==="Regular TV"?3:1)));
   let genres=Object.entries(scores).sort((a,b)=>b[1]-a[1]).slice(0,4).map(x=>x[0]),candidates=[];
-  for(const x of source){
-   let id=x.s.ids&&x.s.ids.tvmaze;if(!id)continue;
-   let r=await fetch("https://api.tvmaze.com/shows/"+id+"/similar");if(!r.ok)continue;
-   let a=await r.json();
-   a.forEach(sh=>{if(!sh||dismissed.has(Number(sh.id))||known.has((sh.name||"").toLowerCase()))return;let overlap=(sh.genres||[]).filter(g=>genres.includes(g));candidates.push({sh,score:(sh.weight||0)+overlap.reduce((n,g)=>n+(scores[g]||0)*8,0),why:overlap.slice(0,2).join(" + ")||"Similar to shows in your library"})})
+  for(const g of genres){
+   try{
+    let r=await fetch("https://api.tvmaze.com/search/shows?q="+encodeURIComponent(g));if(!r.ok)continue;let a=await r.json();
+    a.forEach(z=>{let sh=z.show;if(!sh||dismissed.has(Number(sh.id))||known.has((sh.name||"").toLowerCase()))return;
+     let overlap=(sh.genres||[]).filter(x=>genres.includes(x));if(!overlap.length)return;
+     let title=(sh.name||"").toLowerCase(),generic=genres.some(x=>title===x.toLowerCase())||/^drama( |$)/i.test(sh.name||"");
+     if(generic)return;
+     candidates.push({sh,score:(sh.weight||0)+overlap.reduce((n,x)=>n+(scores[x]||0)*8,0),why:overlap.slice(0,2).join(" + ")})
+    })
+   }catch(e){}
   }
   let seen=new Set(),best=candidates.sort((a,b)=>b.score-a.score).filter(x=>!seen.has(x.sh.id)&&seen.add(x.sh.id)).slice(0,10);
-  box.innerHTML=best.length?best.map(x=>'<div class="rec">'+(x.sh.image&&x.sh.image.medium?'<img src="'+x.sh.image.medium+'" alt="">':'')+'<div class="recbody"><strong>'+x.sh.name+'</strong><div class="recmeta">'+((x.sh.premiered||"").slice(0,4)||"Year unknown")+' • '+((x.sh.genres||[]).join(", ")||"Genre not listed")+'</div><div class="recwhy">Suggested because it is similar to shows in your Regular/Filler library'+(x.why?" • "+x.why:"")+'</div><button onclick="addRecommended('+x.sh.id+',\''+String(x.sh.name).replace(/'/g,"\\'")+'\')">+ Add</button><button class="dismiss" onclick="dismissRecommendation('+x.sh.id+')">Not Interested</button></div></div>').join(""):'<p class="empty">No new recommendations found right now.</p>'
+  box.innerHTML=best.length?best.map(x=>'<div class="rec">'+(x.sh.image&&x.sh.image.medium?'<img src="'+x.sh.image.medium+'" alt="">':'')+'<div class="recbody"><strong>'+x.sh.name+'</strong><div class="recmeta">'+((x.sh.premiered||"").slice(0,4)||"Year unknown")+' • '+((x.sh.genres||[]).join(", ")||"Genre not listed")+'</div><div class="recwhy">Suggested from your Regular/Filler library • '+x.why+'</div><button onclick="addRecommended('+x.sh.id+',\''+String(x.sh.name).replace(/'/g,"\\'")+'\')">+ Add</button><button class="dismiss" onclick="dismissRecommendation('+x.sh.id+')">Not Interested</button></div></div>').join(""):'<p class="empty">No new recommendations found right now.</p>'
  }catch(e){box.innerHTML='<p class="empty">Recommendations are temporarily unavailable.</p>'}
 }
 async function addRecommended(id,name){
