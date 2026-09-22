@@ -191,6 +191,21 @@ async function addRecommended(id,name){
  let s={title:sh.name,stream:"Checking U.S. availability",status:"Ready to Start",note:"Discovered for us",progress:null,category:map[v],ids:{tvmaze:sh.id,imdb:sh.externals&&sh.externals.imdb||null,thetvdb:sh.externals&&sh.externals.thetvdb||null}};
  shows.push(s);localStorage.setItem(KEY,JSON.stringify(shows));await syncOne(s);page="Home";render()
 }
+function notificationSupport(){return "Notification" in window&&"serviceWorker" in navigator}
+async function enableNotifications(){
+ if(!notificationSupport())return alert("Notifications are not supported in this browser. On iPhone, open Beth and Will's Shows from the Home Screen.");
+ let permission=await Notification.requestPermission();
+ if(permission!=="granted")return alert("Notifications were not enabled. You can change this later in iPhone Settings.");
+ localStorage.setItem("bwNotificationsEnabled","1");render();await checkLocalNotifications(true)
+}
+async function checkLocalNotifications(force){
+ if(!notificationSupport()||Notification.permission!=="granted"||localStorage.getItem("bwNotificationsEnabled")!=="1")return;
+ let available=[];
+ for(const s of shows){if(s.status==="Archive"||!s.progress)continue;try{let x=await getNextInfo(s);if(x&&x.kind==="available")available.push(s.title)}catch(e){}}
+ let key=available.sort().join("|"),old=localStorage.getItem("bwLastNotifiedAvailable")||"";
+ if(key&&key!==old){let reg=await navigator.serviceWorker.ready;await reg.showNotification("Beth and Will's Shows",{body:available.length===1?available[0]+" has a new episode available.":available.length+" of your shows have new episodes available.",icon:"icon-192-q.png",badge:"icon-192-q.png",tag:"bw-new-episodes"});localStorage.setItem("bwLastNotifiedAvailable",key)}
+ else if(!key)localStorage.removeItem("bwLastNotifiedAvailable")
+}
 async function updateAlertBadge(){
  let n=0;
  for(const s of shows){if(s.status==="Archive"||!s.progress)continue;try{let x=await getNextInfo(s);if(x&&x.kind==="available")n++}catch(e){}}
@@ -198,7 +213,7 @@ async function updateAlertBadge(){
  localStorage.setItem("bwAvailableCount",String(n))
 }
 function render(){
- document.querySelector(".nav").innerHTML=["All","Regular TV","Filler TV","Trash TV"].map(v=>'<button class="'+(page==="Home"&&categoryFilter===v?"on":"")+'" onclick="setCategoryFilter(\''+v+'\')">'+v+'</button>').join("")+'<div class="more"><button class="'+(page!=="Home"?"on":"")+'" onclick="toggleMore()">More ▾</button><div id="moreMenu" class="moremenu"><button id="updatesNav" onclick="go(\'Updates\')">Updates</button><button onclick="go(\'Discover\')">Discover</button><button onclick="go(\'Archive\')">Archive</button><button onclick="refreshLibrary()">Refresh Library</button><button onclick="cloudSignOut()">Sign Out</button></div></div>';
+ document.querySelector(".nav").innerHTML=["All","Regular TV","Filler TV","Trash TV"].map(v=>'<button class="'+(page==="Home"&&categoryFilter===v?"on":"")+'" onclick="setCategoryFilter(\''+v+'\')">'+v+'</button>').join("")+'<div class="more"><button class="'+(page!=="Home"?"on":"")+'" onclick="toggleMore()">More ▾</button><div id="moreMenu" class="moremenu"><button id="updatesNav" onclick="go(\'Updates\')">Updates</button><button onclick="enableNotifications()">Enable Notifications</button><button onclick="go(\'Discover\')">Discover</button><button onclick="go(\'Archive\')">Archive</button><button onclick="refreshLibrary()">Refresh Library</button><button onclick="cloudSignOut()">Sign Out</button></div></div>';
  let h="";
  if(page==="Home"){["Watching Now","Ready to Start","Waiting","Upcoming"].forEach(g=>{let a=filteredShows().filter(x=>x[0].status===g);if(a.length)h+='<section class="section"><h2>'+g+"</h2>"+a.map(x=>card(x[0],x[1])).join("")+"</section>"})}
  else if(page==="Archive"){let a=shows.map((s,i)=>[s,i]).filter(x=>x[0].status==="Archive");h='<section class="section"><h2>Archive</h2>'+(a.length?a.map(x=>card(x[0],x[1])).join(""):'<p class="empty">No archived shows yet.</p>')+"</section>"}
@@ -206,7 +221,7 @@ function render(){
  else h='<section class="section"><h2>Discover</h2><p class="muted">Suggestions based on your library. English-language shows only — no dubbed recommendations.</p><div id="discoverList"><p class="empty">Finding shows you may like…</p></div></section>';
  document.getElementById("app").innerHTML=h;
  shows.forEach((s,i)=>{if(s.progress&&(s.status==="Watching Now"||s.status==="Waiting"))liveNext(s,i)});
- if(page==="Updates")renderUpdates();if(page==="Discover")renderDiscover();updateAlertBadge()
+ if(page==="Updates")renderUpdates();if(page==="Discover")renderDiscover();updateAlertBadge();checkLocalNotifications(false)
 }
 save();render();cloudStart();window.addEventListener("focus",()=>{if(cloudToken)loadCloud().catch(()=>{})});if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(()=>{}))}
 </script></body></html>
