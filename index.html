@@ -85,12 +85,36 @@ document.addEventListener("click",e=>{let m=document.getElementById("moreMenu");
 function cloudSignOut(){cloudToken=null;cloudRefreshToken=null;localStorage.removeItem("bwCloudSession");showLogin("Signed out of the shared library.")}
 async function refreshLibrary(){if(!cloudToken)return showLogin();try{await loadCloud()}catch(e){syncStatus("Could not refresh the shared library.",false)}}
 function filteredShows(){return shows.map((s,i)=>[s,i]).filter(x=>(categoryFilter==="All"||(x[0].category||"Regular TV")===categoryFilter)&&(viewerFilter==="Both"?(x[0].viewer||"Both")==="Both":(x[0].viewer||"Both")===viewerFilter))}
-async function resolveTvmaze(s){if(s.ids.tvmaze)return s.ids.tvmaze;if(!s.ids.imdb)return null;try{let r=await fetch("https://api.tvmaze.com/lookup/shows?imdb="+encodeURIComponent(s.ids.imdb));if(!r.ok)return null;let sh=await r.json();s.ids.tvmaze=sh.id;s.ids.imdb=(sh.externals&&sh.externals.imdb)||s.ids.imdb;s.ids.thetvdb=sh.externals&&sh.externals.thetvdb;save();return sh.id}catch(e){return null}}
+async function resolveTvmaze(s,interactive=false){
+ if(s.ids.tvmaze)return s.ids.tvmaze;
+ try{
+  let sh=null;
+  if(s.ids.imdb){
+   let r=await fetch("https://api.tvmaze.com/lookup/shows?imdb="+encodeURIComponent(s.ids.imdb));
+   if(r.ok)sh=await r.json()
+  }
+  if(!sh&&interactive){
+   let r=await fetch("https://api.tvmaze.com/search/shows?q="+encodeURIComponent(s.title));
+   if(r.ok){
+    let a=await r.json(),n=v=>(v||"").toLowerCase().replace(/[^a-z0-9]/g,""),exact=a.filter(x=>n(x.show.name)===n(s.title));
+    if(exact.length===1)sh=exact[0].show;
+    else if(a.length){
+     let list=a.slice(0,5),choices=list.map((x,j)=>(j+1)+". "+x.show.name+" ("+(x.show.premiered?x.show.premiered.slice(0,4):"year unknown")+")").join("\n");
+     let pick=prompt("Choose the correct TV listing for "+s.title+":\n\n"+choices+"\n\nEnter 1-"+list.length);
+     if(pick===null)return null;let pi=parseInt(pick)-1;if(isNaN(pi)||pi<0||pi>=list.length){alert("Please choose a number from the list.");return null}sh=list[pi].show
+    }
+   }
+  }
+  if(!sh)return null;
+  s.ids=s.ids||{};s.ids.tvmaze=sh.id;s.ids.imdb=(sh.externals&&sh.externals.imdb)||s.ids.imdb||null;s.ids.thetvdb=sh.externals&&sh.externals.thetvdb||s.ids.thetvdb||null;
+  localStorage.setItem(KEY,JSON.stringify(shows));await syncOne(s);return sh.id
+ }catch(e){return null}
+}
 async function autoLink(){for(const s of shows){if(s.ids.tvmaze||s.ids.imdb)continue;try{let r=await fetch("https://api.tvmaze.com/search/shows?q="+encodeURIComponent(s.title));if(!r.ok)continue;let a=await r.json(),n=v=>(v||"").toLowerCase().replace(/[^a-z0-9]/g,""),x=a.filter(z=>n(z.show.name)===n(s.title));if(x.length===1){let sh=x[0].show;s.ids={tvmaze:sh.id,imdb:sh.externals&&sh.externals.imdb||null,thetvdb:sh.externals&&sh.externals.thetvdb||null};save()}}catch(e){}}render()}
 function advance(i){let s=shows[i];lastChange={i,progress:s.progress?{...s.progress}:null,note:s.note};if(!s.progress)s.progress={season:1,episode:1};else if(s.progress.complete){s.progress={season:s.progress.season+1,episode:1}}else s.progress.episode++;s.note="Season "+s.progress.season+" • Episode "+s.progress.episode+" watched";save();render()}
 function undoProgress(){if(!lastChange)return;let s=shows[lastChange.i];s.progress=lastChange.progress;s.note=lastChange.note;lastChange=null;save();render()}
 async function editProgress(i){
- let s=shows[i],p=s.progress||{},id=await resolveTvmaze(s),eps=[];
+ let s=shows[i],p=s.progress||{},id=await resolveTvmaze(s,true),eps=[];
  if(id){try{let r=await fetch("https://api.tvmaze.com/shows/"+id+"/episodes");if(r.ok)eps=await r.json()}catch(e){}}
  if(!eps.length){
   let a=prompt("Season number",p.season||"");if(a===null)return;let b=prompt("Last episode watched",p.episode||"");if(b===null)return;a=parseInt(a);b=parseInt(b);if(!a||isNaN(b)||b<0)return alert("Please enter valid season and episode numbers.");s.progress={season:a,episode:b};s.note="Season "+a+" • Episode "+b+" watched";s.status="Watching Now";save();render();return
