@@ -121,11 +121,10 @@ async function editProgress(i){
  }
  let seasons=[...new Set(eps.filter(e=>e.season>0&&e.number!=null).map(e=>e.season))].sort((a,b)=>b-a);
  let latest=eps.filter(e=>e.number!=null&&e.season>0&&(e.airstamp?new Date(e.airstamp)<=new Date():e.airdate?new Date(e.airdate+"T23:59:59")<=new Date():false)).sort((a,b)=>b.season-a.season||b.number-a.number)[0];
- let seasonText=seasons.map((x,n)=>(n+1)+". Season "+x+(latest&&x===latest.season?" (latest available)":"")).join("\n");
- let def=Math.max(0,seasons.indexOf(Number(p.season)))+1;if(!def)def=1;
- let pick=prompt(s.title+"\n\nChoose the season:\n\n"+seasonText+"\n\nEnter 1-"+seasons.length,String(def));if(pick===null)return;
- let si=parseInt(pick)-1;if(isNaN(si)||si<0||si>=seasons.length)return alert("Please choose a season from the list.");
- let season=seasons[si],seasonEps=eps.filter(e=>e.season===season&&e.number!=null).sort((a,b)=>a.number-b.number),available=seasonEps.filter(e=>e.airstamp?new Date(e.airstamp)<=new Date():e.airdate?new Date(e.airdate+"T23:59:59")<=new Date():false);
+ let seasonText=seasons.map(x=>"Season "+x+(latest&&x===latest.season?" (latest available)":"")).join("\n");
+ let def=seasons.includes(Number(p.season))?Number(p.season):(latest?latest.season:seasons[0]);
+ let pick=prompt(s.title+"\n\nChoose the season:\n\n"+seasonText+"\n\nEnter the SEASON NUMBER.",String(def));if(pick===null)return;
+ let season=parseInt(pick);if(isNaN(season)||!seasons.includes(season))return alert("Please enter one of the season numbers shown."),seasonEps=eps.filter(e=>e.season===season&&e.number!=null).sort((a,b)=>a.number-b.number),available=seasonEps.filter(e=>e.airstamp?new Date(e.airstamp)<=new Date():e.airdate?new Date(e.airdate+"T23:59:59")<=new Date():false);
  let latestSeasonEp=available.length?available[available.length-1]:null,maxEp=seasonEps.length?seasonEps[seasonEps.length-1].number:0;
  let current=Number(p.season)===season&&!p.complete?Number(p.episode||0):0;
  let b=prompt("Season "+season+" has "+seasonEps.length+" listed episode"+(seasonEps.length===1?"":"s")+"."+(latestSeasonEp?"\nLatest available: Episode "+latestSeasonEp.number+(latestSeasonEp.name?" — "+latestSeasonEp.name:""):"\nNo episodes from this season are available yet.")+"\n\nEnter the LAST episode watched.\nEnter 0 if you have not started this season.\nEnter F if you finished the season.",String(current));
