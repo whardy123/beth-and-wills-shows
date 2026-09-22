@@ -137,7 +137,7 @@ async function editProgress(i){
   let ep=parseInt(b);if(isNaN(ep)||ep<0||ep>maxEp)return alert("Please enter an episode number from 0 to "+maxEp+", or F for finished.");
   s.progress={season:season,episode:ep};s.note=ep===0?"Season "+season+" • Not started":"Season "+season+" • Episode "+ep+" watched";s.status="Watching Now";
  }
- save();render()
+ localStorage.setItem(KEY,JSON.stringify(shows));render();syncOne(s)
 }
 function archiveShow(i){shows[i].previousStatus=shows[i].status;shows[i].status="Archive";save();render()}
 function restoreShow(i){shows[i].status=shows[i].previousStatus||"Ready to Start";save();render()}
