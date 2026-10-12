@@ -110,7 +110,21 @@ async function resolveTvmaze(s,interactive=false){
   localStorage.setItem(KEY,JSON.stringify(shows));await syncOne(s);return sh.id
  }catch(e){return null}
 }
-async function autoLink(){for(const s of shows){if(s.ids.tvmaze||s.ids.imdb)continue;try{let r=await fetch("https://api.tvmaze.com/search/shows?q="+encodeURIComponent(s.title));if(!r.ok)continue;let a=await r.json(),n=v=>(v||"").toLowerCase().replace(/[^a-z0-9]/g,""),x=a.filter(z=>n(z.show.name)===n(s.title));if(x.length===1){let sh=x[0].show;s.ids={tvmaze:sh.id,imdb:sh.externals&&sh.externals.imdb||null,thetvdb:sh.externals&&sh.externals.thetvdb||null};save()}}catch(e){}}render()}
+function sameShowTitle(a,b){return String(a||"").toLowerCase().replace(/[^a-z0-9]/g,"")===String(b||"").toLowerCase().replace(/[^a-z0-9]/g,"")}
+async function autoLink(){
+ const pending=shows.filter(s=>!(s.ids&&s.ids.tvmaze));
+ for(const s of pending){
+  try{
+   let sh=null;
+   if(s.ids&&s.ids.imdb){let r=await fetch("https://api.tvmaze.com/lookup/shows?imdb="+encodeURIComponent(s.ids.imdb));if(r.ok)sh=await r.json()}
+   if(!sh){let r=await fetch("https://api.tvmaze.com/search/shows?q="+encodeURIComponent(s.title));if(!r.ok)continue;let a=await r.json(),exact=a.filter(x=>sameShowTitle(x.show.name,s.title));if(exact.length===1)sh=exact[0].show}
+   if(!sh)continue;
+   s.ids=s.ids||{};s.ids.tvmaze=sh.id;s.ids.imdb=s.ids.imdb||(sh.externals&&sh.externals.imdb)||null;s.ids.thetvdb=s.ids.thetvdb||(sh.externals&&sh.externals.thetvdb)||null;
+   localStorage.setItem(KEY,JSON.stringify(shows));await syncOne(s);
+   const i=shows.indexOf(s);if(i>=0)loadPoster(s,i)
+  }catch(e){}
+ }
+}
 function advance(i){let s=shows[i];lastChange={i,progress:s.progress?{...s.progress}:null,note:s.note};if(!s.progress)s.progress={season:1,episode:1};else if(s.progress.complete){s.progress={season:s.progress.season+1,episode:1}}else s.progress.episode++;s.note="Season "+s.progress.season+" • Episode "+s.progress.episode+" watched";save();render()}
 function undoProgress(){if(!lastChange)return;let s=shows[lastChange.i];s.progress=lastChange.progress;s.note=lastChange.note;lastChange=null;save();render()}
 async function editProgress(i){
@@ -283,6 +297,7 @@ async function updateAlertBadge(){
  let b=document.getElementById("updatesNav");if(b)b.innerHTML="Updates"+(n?'<span class="alertdot">'+n+'</span>':"");
  localStorage.setItem("bwAvailableCount",String(n))
 }
+let autoLinkRunning=false;
 function render(){
  document.querySelector(".nav").innerHTML=["All","Regular TV","Filler TV","Trash TV"].map(v=>'<button class="'+(page==="Home"&&categoryFilter===v?"on":"")+'" onclick="setCategoryFilter(\''+v+'\')">'+v+'</button>').join("")+'<div class="more"><button class="'+(page!=="Home"?"on":"")+'" onclick="toggleMore()">More ▾</button><div id="moreMenu" class="moremenu"><button id="updatesNav" onclick="go(\'Updates\')">Updates</button><button onclick="enableNotifications()">Enable Notifications</button><button onclick="go(\'Discover\')">Discover</button><button onclick="go(\'Archive\')">Archive</button><button onclick="refreshLibrary()">Refresh Library</button><button onclick="cloudSignOut()">Sign Out</button></div></div>';
  let h="";
@@ -291,7 +306,7 @@ function render(){
  else if(page==="Updates")h='<section class="section"><h2>Updates</h2><p class="muted">What’s new with your shows — episodes, premieres and series status.</p><div id="updatesList"><p class="empty">Checking your shows…</p></div></section>';
  else h='<section class="section"><h2>Discover</h2><p class="muted">Suggestions based on your library. English-language shows only — no dubbed recommendations.</p><div id="discoverList"><p class="empty">Finding shows you may like…</p></div></section>';
  document.getElementById("app").innerHTML=h;
- shows.forEach((s,i)=>{loadPoster(s,i);if(s.progress&&(s.status==="Watching Now"||s.status==="Waiting"))liveNext(s,i)});
+ shows.forEach((s,i)=>{loadPoster(s,i);if(s.progress&&(s.status==="Watching Now"||s.status==="Waiting"))liveNext(s,i)}); if(page==="Home"&&!autoLinkRunning){autoLinkRunning=true;autoLink().finally(()=>{autoLinkRunning=false})}
  if(page==="Updates")renderUpdates();if(page==="Discover")renderDiscover();updateAlertBadge();checkLocalNotifications(false)
 }
 save();render();cloudStart();window.addEventListener("focus",()=>{if(cloudToken)loadCloud().catch(()=>{})});if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./service-worker.js").catch(()=>{}))}
